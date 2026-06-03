@@ -4,3 +4,9 @@ uvicorn
 sqlalchemy
 psycopg2-binary
 python-dotenv
+asyncpg
+passlib[bcrypt]
+bcrypt==4.0.1
+pydantic[email]
+python-jose[cryptography]
+fastapi-mail
