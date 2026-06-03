@@ -2,6 +2,7 @@ from logging.config import fileConfig
 
 from sqlalchemy import engine_from_config
 from sqlalchemy import pool
+from app.constants.environ import DB_HOST, DB_NAME, DB_USER, DB_PASSWORD, DB_PORT
 
 from alembic import context
 
@@ -11,6 +12,8 @@ from app.db.models import User
 
 # Alembic Config object
 config = context.config
+database_url = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+config.set_main_option("sqlalchemy.url", database_url)
 
 # Configure logging
 if config.config_file_name is not None:
@@ -26,7 +29,7 @@ def run_migrations_offline() -> None:
     """
 
     url = config.get_main_option("sqlalchemy.url")
-
+    print("using URL: ", url)
     context.configure(
         url=url,
         target_metadata=target_metadata,
