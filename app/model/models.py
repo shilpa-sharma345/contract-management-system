@@ -10,6 +10,7 @@ class UserRole(str, Enum):
     admin = "admin"
     contract_manager = "contract_manager"
     department_user = "department_user"
+    viewer = "viewer"
 
 
 class Settings(BaseSettings):
@@ -56,9 +57,30 @@ class ContractResponse(BaseModel):
     id: int
     title: str
     status: str
-    expiry_date: datetime | None
+    department: str | None = None
+
+    # File
+    file_path: str | None = None
+
+    # Contract dates
+    start_date: datetime | None = None
+    expiry_date: datetime | None = None
+
+    # Contract details
+    supplier: str | None = None
+    value: str | None = None
+    notice_period: str | None = None
+
+    # AI results
+    ai_summary: str | None = None
+    risk_flag: str | None = None
+    key_clauses: str | None = None
+
     uploaded_by: int
     created_at: datetime
+
+    class Config:
+        from_attributes = True
 
     class Config:
         from_attributes = True
@@ -66,4 +88,5 @@ class ContractResponse(BaseModel):
 class ContractCreate(BaseModel):
     title: str
     status: str = "active"
+    department: str | None = None
     expiry_date: datetime | None = None

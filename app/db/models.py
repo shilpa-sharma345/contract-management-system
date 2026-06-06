@@ -22,13 +22,26 @@ class Contract(Base):
     __tablename__ = "contracts"
 
     id = Column(Integer, primary_key=True, index=True)
-
     title = Column(String(255), nullable=False)
-
     status = Column(String(50), nullable=False, default="active")
+    department = Column(String(100), nullable=True)
 
+    # File
+    file_path = Column(String(500), nullable=True)
+
+    # Contract dates
+    start_date = Column(DateTime, nullable=True)
     expiry_date = Column(DateTime, nullable=True)
 
-    uploaded_by = Column(Integer, ForeignKey("users.id"), nullable=False)
+    # Contract details (extracted by AI)
+    supplier = Column(String(255), nullable=True)
+    value = Column(String(100), nullable=True)
+    notice_period = Column(String(100), nullable=True)
 
+    # AI results
+    ai_summary = Column(String, nullable=True)
+    risk_flag = Column(String, nullable=True)
+    key_clauses = Column(String, nullable=True)
+
+    uploaded_by = Column(Integer, ForeignKey("users.id"), nullable=False)
     created_at = Column(DateTime, server_default=func.now(), nullable=False)
