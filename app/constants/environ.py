@@ -27,9 +27,15 @@ if not SECRET_KEY:
     raise RuntimeError("SECRET_KEY not found")
 
 ALGORITHM = os.getenv("ALGORITHM", "HS256")
+if not ALGORITHM:
+    raise RuntimeError("ALGORITHM not found")
 
 ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", 30))
+if not ACCESS_TOKEN_EXPIRE_MINUTES:
+    raise RuntimeError("ACCESS_TOKEN_EXPIRE_MINUTES not found")
 RESET_TOKEN_EXPIRE_MINUTES = int(os.getenv("RESET_TOKEN_EXPIRE_MINUTES", 15))
+if not RESET_TOKEN_EXPIRE_MINUTES:
+    raise RuntimeError("RESET_TOKEN_EXPIRE_MINUTES not found")
 
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")

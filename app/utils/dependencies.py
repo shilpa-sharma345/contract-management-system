@@ -9,9 +9,10 @@ from sqlalchemy import select
 
 from app.constants.environ import SECRET_KEY, ALGORITHM
 from app.model.models import UserRole
-
 security = HTTPBearer()
 
+def decode_token(token: str):
+    return jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
 
 async def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(security)
@@ -66,3 +67,24 @@ def require_role(*allowed_roles: UserRole):
             )
         return current_user
     return role_checker
+
+
+def contractor_required(
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    try:
+        payload = decode_token(credentials.credentials)
+
+        if payload.get("role") not in ["contractor","admin"]:
+            raise HTTPException(
+                status_code=403,
+                detail="Contractor access only"
+            )
+
+        return payload
+
+    except JWTError:
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid or expired token"
+        )

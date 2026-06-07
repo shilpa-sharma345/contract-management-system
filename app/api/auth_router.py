@@ -1,6 +1,7 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from typing import List
 from app.model.models import ContractResponse
+from app.utils.dependencies import contractor_required
 from app.auth.auth_functions import (
     register,
     login,
@@ -30,8 +31,8 @@ auth_router.get("/me")(get_me)
 contracts_router = APIRouter(prefix="/contracts", tags=["Contracts"])
 
 contracts_router.get("", response_model=List[ContractResponse])(get_contracts)
-contracts_router.post("")(create_contract)
-contracts_router.delete("/{contract_id}")(delete_contract)
+contracts_router.post("/create/contract")(create_contract)
+contracts_router.delete("/delete/{contract_id}", dependencies=[Depends(contractor_required)])(delete_contract)
 contracts_router.get("/search")(get_filtered_contracts)
 contracts_router.post("/upload")(upload_contract)
 contracts_router.get("/{contract_id}")(get_contract_by_id)

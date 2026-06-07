@@ -1,10 +1,15 @@
-from sqlalchemy import Column, Integer, String , DateTime , ForeignKey
+from sqlalchemy import Boolean, Column, Integer, String , DateTime , ForeignKey
 from sqlalchemy.sql import func
 
 from app.db.db import Base
 
+class SoftDeleteMixin:
+    is_deleted = Column(Boolean, default=False, nullable=False)
 
-class User(Base):
+    def soft_delete(self):
+        self.is_deleted = True
+        
+class User(Base,SoftDeleteMixin):
     __tablename__ = "users"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -17,8 +22,7 @@ class User(Base):
 
     role = Column(String(50), nullable=False, default="department_user")
 
-
-class Contract(Base):
+class Contract(Base,SoftDeleteMixin):
     __tablename__ = "contracts"
 
     id = Column(Integer, primary_key=True, index=True)

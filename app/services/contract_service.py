@@ -17,7 +17,7 @@ class ContractService:
         session = await create_connection()
         try:
             result = await session.execute(
-                select(Contract)
+                select(Contract).where(Contract.is_deleted == False)
             )
             contracts = result.scalars().all()
             return contracts
@@ -83,7 +83,7 @@ class ContractService:
         session = await create_connection()
         try:
             result = await session.execute(
-                select(func.count(Contract.id)).where(Contract.status == "active")
+                select(func.count(Contract.id)).where(Contract.status == "active", Contract.is_deleted == False)
             )
             return result.scalar()
         finally:
@@ -101,7 +101,8 @@ class ContractService:
             result = await session.execute(
                 select(Contract).where(
                     Contract.expiry_date >= now,
-                    Contract.expiry_date <= thirty_days
+                    Contract.expiry_date <= thirty_days,
+                    Contract.is_deleted == False
                 )
             )
             return result.scalars().all()
@@ -120,7 +121,8 @@ class ContractService:
             result = await session.execute(
                 select(Contract).where(
                     Contract.expiry_date >= now,
-                    Contract.expiry_date <= ninety_days
+                    Contract.expiry_date <= ninety_days,
+                    Contract.is_deleted == False
                 )
             )
             return result.scalars().all()
@@ -139,7 +141,8 @@ class ContractService:
             result = await session.execute(
                 select(Contract).where(
                     Contract.expiry_date >= now,
-                    Contract.expiry_date <= ninety_days
+                    Contract.expiry_date <= ninety_days,
+                    Contract.is_deleted == False
                 ).order_by(Contract.expiry_date.asc())
             )
             contracts = result.scalars().all()
@@ -168,7 +171,7 @@ class ContractService:
     ):
         session = await create_connection()
         try:
-            query = select(Contract)
+            query = select(Contract).where(Contract.is_deleted==False)
 
             if search:
                 query = query.where(Contract.title.ilike(f"%{search}%"))
@@ -192,7 +195,10 @@ class ContractService:
         session = await create_connection()
         try:
             result = await session.execute(
-                select(Contract).where(Contract.id == contract_id)
+                select(Contract).where(
+                    Contract.id == contract_id,
+                    Contract.is_deleted == False
+                    )
             )
             contract = result.scalar_one_or_none()
             return contract
