@@ -4,6 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.services.contract_service import ContractService
 from app.model.models import UserRole, ContractResponse
 from typing import List
+from app.services.reminder_service import ReminderService
 from app.model.models import ContractCreate
 from app.model.models import (
     UserCreate,
@@ -12,6 +13,7 @@ from app.model.models import (
 )
 from app.auth.auth_service import AuthService
 from app.utils.dependencies import get_current_user, require_role
+from uuid import UUID
 
 
 async def register(user: UserCreate):
@@ -32,7 +34,7 @@ async def get_me(
     current_user=Depends(get_current_user)
 ):
     return {
-        "id": current_user.id,
+        "id": str(current_user.id),
         "full_name": current_user.full_name,
         "email": current_user.email,
         "role": current_user.role
@@ -40,7 +42,7 @@ async def get_me(
 
 
 async def delete_contract(
-    contract_id: int,
+    contract_id: UUID,
     current_user=Depends(require_role(UserRole.admin))
 ):
     try:
@@ -49,7 +51,7 @@ async def delete_contract(
             raise HTTPException(status_code=404, detail="Contract not found")
         return {
             "message": "Contract deleted successfully",
-            "id": contract_id
+            "id": str(contract_id)
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -153,7 +155,7 @@ async def get_filtered_contracts(
 # GET SINGLE CONTRACT BY ID
 # -------------------------
 async def get_contract_by_id(
-    contract_id: int,
+    contract_id: UUID,
     current_user=Depends(require_role(
         UserRole.admin,
         UserRole.contract_manager,
@@ -192,5 +194,19 @@ async def upload_contract(
             user_id=current_user.id,
             file=file
         )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# -------------------------
+# MANUAL TRIGGER — SEND EXPIRY REMINDERS
+# -------------------------
+async def test_expiry_reminder(
+    current_user=Depends(require_role(UserRole.admin))
+):
+    try:
+        for days in [30, 7, 1]:
+            await ReminderService.send_expiry_reminders(days)
+        return {"message": "Expiry reminders processed"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

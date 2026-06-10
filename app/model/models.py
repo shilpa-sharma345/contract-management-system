@@ -1,10 +1,10 @@
-import re
-from typing import Optional,List
+from typing import Optional, List
 from pydantic_settings import BaseSettings
-from pydantic import BaseModel,Field, EmailStr,  field_validator,model_validator
+from pydantic import BaseModel, EmailStr
 from datetime import datetime
 from enum import Enum
 from uuid import UUID
+
 
 class UserRole(str, Enum):
     admin = "admin"
@@ -25,12 +25,8 @@ class Settings(BaseSettings):
     RESET_TOKEN_EXPIRE_MINUTES: int
     GEMINI_API_KEY: str
 
-
-
-
     class Config:
         env_file = ".env"
-
 
 
 class UserCreate(BaseModel):
@@ -46,7 +42,7 @@ class UserLogin(BaseModel):
 
 
 class UserResponse(BaseModel):
-    id: int
+    id: UUID
     full_name: str
     email: str
     role: UserRole
@@ -54,8 +50,23 @@ class UserResponse(BaseModel):
     class Config:
         from_attributes = True
 
+
+# ── Screen 3: contract listing (no AI fields) ──────────────────
+class ContractListResponse(BaseModel):
+    id: UUID
+    title: str
+    department: str | None = None
+    start_date: datetime | None = None
+    expiry_date: datetime | None = None
+    status: str
+
+    class Config:
+        from_attributes = True
+
+
+# ── Screen 3 → View: full detail including AI fields ──────────
 class ContractResponse(BaseModel):
-    id: int
+    id: UUID
     title: str
     status: str
     department: str | None = None
@@ -77,17 +88,16 @@ class ContractResponse(BaseModel):
     risk_flag: str | None = None
     key_clauses: str | None = None
 
-    uploaded_by: int
+    uploaded_by: UUID
     created_at: datetime
 
     class Config:
         from_attributes = True
 
-    class Config:
-        from_attributes = True
 
 class ContractCreate(BaseModel):
     title: str
     status: str = "active"
     department: str | None = None
+    start_date: datetime | None = None
     expiry_date: datetime | None = None

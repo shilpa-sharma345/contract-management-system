@@ -9,6 +9,8 @@ from sqlalchemy import select
 
 from app.constants.environ import SECRET_KEY, ALGORITHM
 from app.model.models import UserRole
+from uuid import UUID
+
 security = HTTPBearer()
 
 def decode_token(token: str):
@@ -26,15 +28,17 @@ async def get_current_user(
             algorithms=[ALGORITHM]
         )
 
-        user_id = payload.get("user_id")
+        user_id_str = payload.get("user_id")
 
-        if user_id is None:
+        if user_id_str is None:
             raise HTTPException(
                 status_code=401,
                 detail="Invalid token"
             )
 
-    except JWTError:
+        user_id = UUID(user_id_str)  # convert string back to UUID
+
+    except (JWTError, ValueError):
         raise HTTPException(
             status_code=401,
             detail="Token is invalid or expired"
@@ -69,16 +73,18 @@ def require_role(*allowed_roles: UserRole):
     return role_checker
 
 
-def contractor_required(
+# contractor_required replaced with admin_required
+# "contractor" was not a valid role — admin is the correct equivalent
+def admin_required(
     credentials: HTTPAuthorizationCredentials = Depends(security)
 ):
     try:
         payload = decode_token(credentials.credentials)
 
-        if payload.get("role") not in ["contractor","admin"]:
+        if payload.get("role") not in [UserRole.admin.value]:
             raise HTTPException(
                 status_code=403,
-                detail="Contractor access only"
+                detail="Admin access only"
             )
 
         return payload

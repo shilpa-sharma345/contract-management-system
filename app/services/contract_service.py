@@ -1,4 +1,4 @@
-from sqlalchemy import select, delete, func
+from sqlalchemy import select, func
 from app.db.db import create_connection, close_connection
 from app.db.models import Contract
 from app.model.models import ContractCreate
@@ -6,6 +6,7 @@ from datetime import datetime, timedelta
 from app.services.ai_service import analyze_contract
 from app.utils.file_handler import save_upload_file, extract_text_from_file
 from fastapi import UploadFile
+from uuid import UUID
 
 class ContractService:
 
@@ -28,11 +29,10 @@ class ContractService:
     # CREATE CONTRACT
     # -------------------------
     @staticmethod
-    async def create_contract(contract_data: ContractCreate, user_id: int):
+    async def create_contract(contract_data: ContractCreate, user_id: UUID):
         session = await create_connection()
         try:
             expiry_date = contract_data.expiry_date
-
             if expiry_date:
                 expiry_date = expiry_date.replace(tzinfo=None)
 
@@ -53,14 +53,17 @@ class ContractService:
             await close_connection(session)
 
     # -------------------------
-    # DELETE CONTRACT
+    # DELETE CONTRACT (soft)
     # -------------------------
     @staticmethod
-    async def delete_contract(contract_id: int):
+    async def delete_contract(contract_id: UUID):
         session = await create_connection()
         try:
             result = await session.execute(
-                select(Contract).where(Contract.id == contract_id)
+                select(Contract).where(
+                    Contract.id == contract_id,
+                    Contract.is_deleted == False
+                )
             )
 
             contract = result.scalar_one_or_none()
@@ -68,7 +71,7 @@ class ContractService:
             if not contract:
                 return None
 
-            await session.delete(contract)
+            contract.is_deleted = True
             await session.commit()
 
             return contract
@@ -149,7 +152,7 @@ class ContractService:
 
             return [
                 {
-                    "id": c.id,
+                    "id": str(c.id),
                     "title": c.title,
                     "department": c.department,
                     "expiry_date": c.expiry_date,
@@ -171,7 +174,7 @@ class ContractService:
     ):
         session = await create_connection()
         try:
-            query = select(Contract).where(Contract.is_deleted==False)
+            query = select(Contract).where(Contract.is_deleted == False)
 
             if search:
                 query = query.where(Contract.title.ilike(f"%{search}%"))
@@ -191,14 +194,14 @@ class ContractService:
     # GET SINGLE CONTRACT BY ID
     # -------------------------
     @staticmethod
-    async def get_contract_by_id(contract_id: int):
+    async def get_contract_by_id(contract_id: UUID):
         session = await create_connection()
         try:
             result = await session.execute(
                 select(Contract).where(
                     Contract.id == contract_id,
                     Contract.is_deleted == False
-                    )
+                )
             )
             contract = result.scalar_one_or_none()
             return contract
@@ -212,41 +215,44 @@ class ContractService:
     async def upload_contract(
         title: str,
         department: str,
-        user_id: int,
+        user_id: UUID,
         file: UploadFile
     ):
         session = await create_connection()
         try:
-            # Save file to disk
             file_path = await save_upload_file(file)
-
-            # Extract text from file
             contract_text = extract_text_from_file(file_path)
-
-            # Send text to Gemini AI
+            print("EXTRACTED TEXT:", contract_text[:500])
             ai_result = await analyze_contract(contract_text)
+            print("AI RESULT:", ai_result)
 
-            # Parse dates from AI result
             start_date = None
             expiry_date = None
 
-            if ai_result.get("start_date"):
-                try:
-                    start_date = datetime.strptime(
-                        ai_result["start_date"], "%Y-%m-%d"
-                    )
-                except:
-                    pass
+            def parse_date(date_str):
+                if not date_str:
+                    return None
+                formats = [
+                    "%Y-%m-%d",        # 2024-07-01
+                    "%d-%m-%Y",        # 01-07-2024
+                    "%d/%m/%Y",        # 01/07/2024
+                    "%B %d, %Y",       # July 01, 2024
+                    "%d %B %Y",        # 01 July 2024
+                    "%b %d, %Y",       # Jul 01, 2024
+                    "%d %b %Y",        # 01 Jul 2024
+                    "%m/%d/%Y",        # 07/01/2024
+                    "%Y/%m/%d",        # 2024/07/01
+                ]
+                for fmt in formats:
+                    try:
+                        return datetime.strptime(date_str.strip(), fmt)
+                    except:
+                        continue
+                return None
 
-            if ai_result.get("end_date"):
-                try:
-                    expiry_date = datetime.strptime(
-                        ai_result["end_date"], "%Y-%m-%d"
-                    )
-                except:
-                    pass
+            start_date = parse_date(ai_result.get("start_date"))
+            expiry_date = parse_date(ai_result.get("end_date"))
 
-            # Save everything to DB
             new_contract = Contract(
                 title=title,
                 department=department,

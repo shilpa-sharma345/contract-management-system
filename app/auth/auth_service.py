@@ -1,6 +1,6 @@
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.db.db import create_connection, close_connection 
+from app.db.db import create_connection, close_connection
 from app.db.models import User
 from app.model.models import UserCreate, UserLogin
 from app.utils.security import hash_password, verify_password
@@ -13,9 +13,7 @@ class AuthService:
     # REGISTER USER
     # -------------------------
     @staticmethod
-    async def register_user(
-        user_data: UserCreate,
-    ):
+    async def register_user(user_data: UserCreate):
         session = await create_connection()
         try:
             result = await session.execute(
@@ -27,7 +25,6 @@ class AuthService:
             if existing_user:
                 raise ValueError("Email already registered")
 
-            # create new user
             new_user = User(
                 full_name=user_data.full_name,
                 email=user_data.email,
@@ -42,11 +39,12 @@ class AuthService:
             return new_user
         finally:
             await close_connection(session)
+
     # -------------------------
     # LOGIN USER
     # -------------------------
     @staticmethod
-    async def login_user(user_data: UserLogin,):
+    async def login_user(user_data: UserLogin):
         session = await create_connection()
         try:
             result = await session.execute(
@@ -58,15 +56,12 @@ class AuthService:
             if not user:
                 raise ValueError("Invalid credentials")
 
-            if not verify_password(
-                user_data.password,
-                user.hashed_password
-            ):
+            if not verify_password(user_data.password, user.hashed_password):
                 raise ValueError("Invalid credentials")
 
             token = create_access_token(
                 data={
-                    "user_id": user.id,
+                    "user_id": str(user.id),  # UUID → string for JWT
                     "email": user.email,
                     "role": user.role
                 }
@@ -78,4 +73,3 @@ class AuthService:
             }
         finally:
             await close_connection(session)
-

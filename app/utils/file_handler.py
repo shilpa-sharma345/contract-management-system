@@ -15,7 +15,6 @@ UPLOAD_FOLDER = "uploads"
 # SAVE FILE TO DISK
 # -------------------------
 async def save_upload_file(file: UploadFile) -> str:
-    # Check file extension
     filename = file.filename
     ext = os.path.splitext(filename)[1].lower()
 
@@ -25,11 +24,9 @@ async def save_upload_file(file: UploadFile) -> str:
             detail="Invalid file type. Only PDF, DOC, DOCX allowed."
         )
 
-    # Generate unique filename
     unique_filename = f"{uuid.uuid4()}{ext}"
     file_path = os.path.join(UPLOAD_FOLDER, unique_filename)
 
-    # Save file to disk
     os.makedirs(UPLOAD_FOLDER, exist_ok=True)
     contents = await file.read()
     with open(file_path, "wb") as f:
@@ -72,7 +69,20 @@ def extract_text_from_pdf(file_path: str) -> str:
 # -------------------------
 def extract_text_from_docx(file_path: str) -> str:
     doc = Document(file_path)
-    text = ""
+    parts = []
+
+    # Extract text from tables FIRST so dates appear at the top
+    for table in doc.tables:
+        for row in table.rows:
+            row_text = " | ".join(
+                cell.text.strip() for cell in row.cells if cell.text.strip()
+            )
+            if row_text:
+                parts.append(row_text)
+
+    # Then extract paragraph text
     for para in doc.paragraphs:
-        text += para.text + "\n"
-    return text
+        if para.text.strip():
+            parts.append(para.text.strip())
+
+    return "\n".join(parts)
