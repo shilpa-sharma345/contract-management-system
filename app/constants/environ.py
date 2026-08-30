@@ -1,0 +1,56 @@
+import os
+from dotenv import load_dotenv
+
+load_dotenv(dotenv_path=".env")
+
+DB_HOST = os.getenv("DB_HOST")
+if not DB_HOST:
+    raise RuntimeError("DB_HOST not found")
+
+DB_NAME = os.getenv("DB_NAME")
+if not DB_NAME:
+    raise RuntimeError("DB_NAME not found")
+
+DB_USER = os.getenv("DB_USER")
+if not DB_USER:
+    raise RuntimeError("DB_USER not found")
+
+DB_PASSWORD = os.getenv("DB_PASSWORD")
+if not DB_PASSWORD:
+    raise RuntimeError("DB_PASSWORD not found")
+
+DB_PORT = os.getenv("DB_PORT")
+if not DB_PORT:
+    raise RuntimeError("DB_PORT not found")
+
+SECRET_KEY = os.getenv("SECRET_KEY")
+if not SECRET_KEY:
+    raise RuntimeError("SECRET_KEY not found")
+
+ALGORITHM = os.getenv("ALGORITHM", "HS256")
+if not ALGORITHM:
+    raise RuntimeError("ALGORITHM not found")
+
+ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", 30))
+if not ACCESS_TOKEN_EXPIRE_MINUTES:
+    raise RuntimeError("ACCESS_TOKEN_EXPIRE_MINUTES not found")
+
+RESET_TOKEN_EXPIRE_MINUTES = int(os.getenv("RESET_TOKEN_EXPIRE_MINUTES", 15))
+if not RESET_TOKEN_EXPIRE_MINUTES:
+    raise RuntimeError("RESET_TOKEN_EXPIRE_MINUTES not found")
+
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+if not GEMINI_API_KEY:
+    raise RuntimeError("GEMINI_API_KEY not found")
+
+SENDGRID_API_KEY = os.getenv("SENDGRID_API_KEY")
+if not SENDGRID_API_KEY:
+    raise RuntimeError("SENDGRID_API_KEY not found")
+
+FROM_EMAIL = os.getenv("FROM_EMAIL")
+if not FROM_EMAIL:
+    raise RuntimeError("FROM_EMAIL not found")
+
+SENDGRID_TEMPLATE_ID = os.getenv("SENDGRID_TEMPLATE_ID")
+if not SENDGRID_TEMPLATE_ID:
+    raise RuntimeError("SENDGRID_TEMPLATE_ID not found")
